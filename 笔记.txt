@@ -1,0 +1,451 @@
+React实战--打造画廊应用
+1.npm ls -g
+列出所有全局安装的npm包
+npm ls -g --depth=1
+最多在当前全局安装的包里面只往下显示一层（因为npm包是存在依赖关系的，是一个树状结构）
+直接在命令行中：
+1表示标准输出
+2表示错误输出
+/dev/null表示 空设备文件
+
+npm ls -g --depth=1 2>/dev/null
+表示：在执行npm ls -g --depth=1过程中如果出现错误消息，就把错误消息重定向（保存）到控设备文件上，其实就是在输出中过滤了错误消息
+|(通道符)
+意思是把上一个命令的输出内容作为下一个命令的输入内容
+grep generator-
+表示在前面命令输出的内容中检索以“generator-”开头的内容
+
+2.把github上新建的项目clone到本地
+git clone https://github.com/newlife201702/gallery-by--react.git
+git@github.com:newlife201702/gallery-by--react.git
+
+3.
+31.上传项目到 GitHub：如何用同一个 github 帐号在两台电脑上同步开发？/ 如何协同开发？:https://blog.csdn.net/zeqiao/article/details/75124532
+想在其他电脑上使用同一个github账号，需要添加sshkey
+
+3.2.解决方案 git@github.com出现Permission denied (publickey):https://www.cnblogs.com/lxwphp/p/7884700.html
+生成的文件需要放在C:\Users\Administrator\.ssh目录下，并且最好文件名设为： id_rsa；否则另起了名字就需要多做操作
+
+4.命令：yo react-webpack gallery-by--react
+利用generator-react-webpack生成项目，gallery-by--react是项目名
+
+5.控制台的arrow keys选择怎么用
+在系统的命令行工具中可以通过上下键进行选择，在gitbash中无法使用
+
+6.代码风格检测工具：
+jshint:检测js风格，配置文件是.jslintrc
+eslint:默认规则包括jshint的内容，并且支持jsx语法，配置文件是.eslintrc
+
+7.
+yo-rc.json:yeoman的配置文件
+...
+
+8.favicon.ico
+可以直接放在项目根目录下，浏览器会自动去寻找使用；当然也可以在html文件中显示的使用它并且指明路径
+
+9.为了方便调试react写的页面，react开发了一个chrome dev tool（谷歌开发者工具）的扩展插件：React Developer Tools(可以在谷歌浏览器中下载该插件)
+最上面会有一个页面状态提示，这其实是通过把真实的页面放在一个iframe钟内嵌进另一个html中，而这个html里面就有最上面的状态的元素
+React Developer Tools会在页面当前环境注册一个全局变量__REACT_DEVTOOLS_GLOBAL_HOOK__（全局对象），react初始化时会与这个对象进行通信，但是这个
+全局对象是注册在最外层的全局环境下的，如果仍想让react与这个插件通信的话，就要手动的拿到这个变量
+
+10.执行：grunt serve即可启动本地服务器，调起浏览器打开index.html(需要全局安装grunt)
+$ grunt serve
+报错：
+ERROR in ./src/images/yeoman.png
+Module build failed: Error: Cannot find module 'file-loader'
+这时候执行：npm install file-loader --save-dev安装即可，然后再运行grunt serve
+
+11.resolve: {
+    extensions: ['', '.js', '.jsx'],
+    alias: {
+      'styles': __dirname + '/src/styles',
+      'mixins': __dirname + '/src/mixins',
+      'components': __dirname + '/src/components/'
+    }
+  },
+如果extensions: ['', '.js', '.jsx']的第一项不写，就会导致require时一些写了文件全称的语句会失效（xxx.js）
+
+12.webpack的开发配置：
+entry: [
+      'webpack/hot/only-dev-server',//这是和热更新相关的js文件，生产模式下不需要
+      './src/components/GalleryByReactApp.js'
+  ],
+
+13.Gruntfile.js
+'webpack-dev-server': {
+      options: {
+        hot: true,//开启热更新
+        port: 8000,
+        webpack: webpackDevConfig,
+        publicPath: '/assets/',
+        contentBase: './<%= pkg.src %>/'//指的是启动的本地服务器根目录，映射到哪个文件夹，这里指定是src（源文件）文件夹
+      },
+
+14.热更新只是针对http://localhost:8000/webpack-dev-server/这个路径有效，对http://localhost:8000（没有上面的app状态提示）无效
+如果想让http://localhost:8000也能热更新，需要在index.html内引入一个js文件
+<script src="/webpack-dev-server.js"></script>
+原因：通过实际测试，发现http://localhost:8000/webpack-dev-server/路径下的index.html页面引入了
+<script type="text/javascript" charset="utf-8" src="/__webpack_dev_server__/live.bundle.js"></script>
+这个文件其实和<script src="/webpack-dev-server.js"></script>是相似的，因此引入
+<script src="/webpack-dev-server.js"></script>能同样达到热更新的效果
+
+推荐访问http://localhost:8000/webpack-dev-server/，因为webpack自动帮助引入了热更新依赖的文件：
+<script type="text/javascript" charset="utf-8" src="/__webpack_dev_server__/live.bundle.js"></script>
+而且还能有上方的app状态提示
+
+15.Gruntfile.js
+start: {
+        keepAlive: true//保证grunt task不退出，举例：如果grunt的serve任务退出了就会导致本地服务器关闭，从而无法正常访问项目
+      }
+
+16.Gruntfile.js
+webpack: {
+      options: webpackDistConfig,
+      dist: {
+        cache: false//是否缓存生成的模块和代码块，默认值为true（以便实现多次增量编译，提升性能），因为当前项目只需要编译一次生成最终生成环境所使用的版本，所以不使用缓存
+      }
+    },
+
+17.Gruntfile.js
+grunt.task.run([
+      'open:dev',
+      'webpack-dev-server'//先执行'open:dev'，再执行'webpack-dev-server'，但是'open:dev'有500毫秒的延时
+    ]);
+
+open: {
+      options: {
+        delay: 500//延时500，为的是打开浏览器时保证本地服务器已经启动了
+      },
+      dev: {//自动打开浏览器，并定位到指定的页面（定位到对应的地址）
+        path: 'http://localhost:<%= connect.options.port %>/webpack-dev-server/'
+      },
+      dist: {
+        path: 'http://localhost:<%= connect.options.port %>/'
+      }
+    },
+
+18.Gruntfile.js
+copy: {//将文件拷贝到dist目录
+      dist: {
+        files: [
+          // includes files within path
+          {
+            flatten: true,
+            expand: true,
+            src: ['<%= pkg.src %>/*'],//往下取一级目录
+            dest: '<%= pkg.dist %>/',
+            filter: 'isFile'//要是文件
+          },
+          {
+            flatten: true,
+            expand: true,
+            src: ['<%= pkg.src %>/images/*'],//将图片文件拷贝到了dist/images目录下
+            dest: '<%= pkg.dist %>/images/'
+          }
+        ]
+      }
+    },
+
+19.Gruntfile.js
+connect: {
+      options: {
+        port: 8000
+      },
+
+      dist: {
+        options: {
+          keepalive: true,
+          middleware: function (connect) {
+            return [
+              mountFolder(connect, pkgConfig.dist)//最终预览发布上线的代码，这时候的根路径要映射到dist目录
+            ];
+          }
+        }
+      }
+    },
+
+20.Gruntfile.js
+grunt.registerTask('test', ['karma']);//使用karma进行自动化测试
+
+21.webpack.config.js
+debug: true,//开启loaders的debug模式
+devtool: 'sourcemap',//生成output中对应文件的sourcemap，方便调试
+
+在webpack.dist.config.js中，情况是这样的：
+debug: false,
+  devtool: false,
+
+stats: {//与命令执行后输出相关的两个配置项
+    colors: true,//彩色文字
+    reasons: true//为什么相关模块会被引入
+  },
+
+
+在webpack.dist.config.js中，情况是这样的：
+debug: false,
+  devtool: false,
+
+{
+      test: /\.(js|jsx)$/,
+      exclude: /node_modules/,
+      loader: 'react-hot!babel-loader'//transpiling	:把一种语言编写的源代码转换为另一种具有相同抽象层次的语言（如：es6转es5）	//compiling:把一种语言编写的源代码编译成另一种语言
+    },//两者都可以在处理过程中优化代码
+react-hot//是用来将代码中的react组件实时编译进行更新的loader
+
+preLoaders: [{//在使用loaders进行文件处理之前，先使用
+      test: /\.(js|jsx)$/,//eslint-loader对文件进行校验。这里保证eslint-loader最先执行
+      exclude: /node_modules/,
+      loader: 'eslint-loader'
+    }],
+
+22.webpack.dist.config.js
+plugins: [
+    new webpack.optimize.DedupePlugin(),//检查相似或者重复的文件，在output中消除这些冗余
+    new webpack.optimize.UglifyJsPlugin(),//压缩
+    new webpack.optimize.OccurenceOrderPlugin(),//按照引用频度来排序各个模块，bundle的id引用的越频繁，其id值就越短，以便达到减小文件大小的效果
+    new webpack.optimize.AggressiveMergingPlugin(),//优化生成的代码段，合并相同的chunck，提取功能部分
+    new webpack.NoErrorsPlugin()//保证编译过程中不能出错
+  ],
+
+23.课程源码调试成功：https://www.jianshu.com/p/f7430e929526
+npm install 
+karma@latest 
+karma-coverage@latest 
+karma-mocha@latest 
+karma-phantomjs-launcher@latest 
+karma-phantomjs-shim@latest 
+karma-sinon-chai@latest 
+karma-sourcemap-loader@latest 
+karma-spec-reporter@latest 
+karma-webpack@latest 
+mocha@latest 
+ws@latest  --save-dev
+//解决报错：Loading "grunt-karma.js" tasks...ERROR >> TypeError: Cannot read property 'property 'prototype' of undefined
+npm install file-loader --save-dev
+//解决警告：Moudle build failed:Error:Cannot find moudle 'file-loader'
+
+24.自己源码调试成功：
+把课程源码中的fonts文件夹复制一份添加进来
+npm install karma@latest karma-jasmine@latest karma-phantomjs-launcher@latest karma-script-launcher@latest karma-webpack@latest --save-dev
+//解决报错：Loading "grunt-karma.js" tasks...ERROR >> TypeError: Cannot read property 'property 'prototype' of undefined
+npm install file-loader --save-dev
+//解决警告：Moudle build failed:Error:Cannot find moudle 'file-loader'
+return (
+            <section className="stage" ref="stage">
+                <section className="img-sec">
+                < / section >
+                <nav className="controller-nav">
+                </nav>
+            </section>
+        );
+之前是因为我在这个html结构里面使用了js的注释，才导致“即使webpack编译成功了，而且也没有报任何错误，但是依然显示错误页面”
+现在把注释去掉了，于是就能正确显示页面了
+
+25.提交代码至github
+git config --global user.email "1245204973@qq.com"
+git config --global user.name "newlife201702"
+配置身份，否则执行小面命令不成功：
+git commit -m"init project strcture"
+
+提交代码的命令及其顺序：
+git config --global user.email "1245204973@qq.com"
+git config --global user.name "newlife201702"
+上面两行只有第一次需要执行
+git add -A
+git commit -m"init project strcture"
+git push
+
+25.HTML <figure> 标签：http://www.w3school.com.cn/tags/tag_figure.asp
+用作文档中插图的图像：
+<figure>
+  <p>黄浦江上的的卢浦大桥</p>
+  <img src="shanghai_lupu_bridge.jpg" width="350" height="234" />
+</figure>
+
+26.Sass @at-root指令：https://www.yiibai.com/sass/directives_atroot.html
+它能够使样式块在文档的根目录
+其实就是直接把样式放到最顶层：减少了嵌套，提升了性能（css选择器层级更深，性能不好，而且将来可移植性也不好）
+
+27.scrollWidth:对象实际内容的宽度，不包含滚动条等边性宽度,会因为对象中内容超过可视区域而变大
+clientWidth：对象内容的可视区域宽度，不包含滚动条等边性宽度,会随对象显示大小的变化而变化
+offsetWidth：对象整体的实际宽度，包含滚动条等边性宽度,会随对象显示大小的变化而变化
+
+28.把每张图片及其对应的按钮的状态存储在react component的state中：因为我们的实现效果是只要点击了一张图片或者一个按钮，就会
+把那种图片居中显示，并且再重新排布其他剩下的图片
+而state刚好就是它发生了改变，视图就会变化，所以存在state上
+
+29.默认情况下，当内容文本超出div宽度之后，就会自动换行，除非你使用的是一些“aaaaaaaaaaaaaaaaaaaaaaa”之类的无间断的英文、数字（测试用数据）（div,h1,h2...中），这时候你可以使用 word-break属性进行处理，设置word-break: break-all;即可
+
+30.splice方法返回被删除的项目组成的数组，该方法会改变原始数组
+
+31.当想给一个元素绑定函数，同时又想传递参数，这时候就可以使用一个函数返回另一个函数的闭包函数的写法（绑定时就是写外层函数的执行，外层函数带参数，这时候给元素
+绑定上的就是里面返回的函数了，同时里面的函数又可以访问到外层函数的参数，这个参数就是当初想传递给这个内层函数的参数）
+
+闭包还可以缓存循环变量的值
+
+32.一个元素绝对定位之后，不仅定位相对于其非静态定位的父级元素，宽高也是相对于它
+
+33.translateZ()
+正值从屏幕像用户靠近，负值反之
+
+34.中心图片在safari上都出现背面被正面翻转的图片和文字盖住的bug
+可尝试：Z轴向前移动1像素
+
+35.CSS3 backface-visibility 属性：http://www.w3school.com.cn/cssref/pr_backface-visibility.asp
+隐藏被旋转的 div 元素的背面
+可以理解变透明了，因为其下面的元素可见
+
+36.元素翻转，会带动内部子元素一起翻转
+
+37.transition
+transition:left .6s ease-in-out
+意思是当left样式变化时，动画时间是0.6s，速度曲线是ease-in-out（低速开始与结束的效果）
+transition: transform .6s ease-in-out;
+意思是也为转换添加一个动画效果
+
+38.增强3d效果，CSS3 perspective 属性：http://www.w3school.com.cn/cssref/pr_perspective.asp
+perspective: 1800px;
+简单理解为用户距离3d元素的远近，靠得越近，3d效果越逼真
+
+39.transform-origin:CSS3 transform-origin 属性：http://www.w3school.com.cn/cssref/pr_transform-origin.asp
+默认值，x轴的中心点，y轴的中心点，z轴的原点
+transform-origin: 50% 50% 0;
+
+40.2d平面移动元素：CSS3 transform 属性：http://www.w3school.com.cn/tiy/c.asp?f=css_transform_translate
+translate(320px,320px)
+参数分别代表x,y轴坐标位置
+x:正值向右，负值向左
+y:正值向下，负值向上
+
+41.transform-style: preserve-3d;:CSS3 transform-style 属性:http://www.w3school.com.cn/cssref/pr_transform-style.asp
+http://www.w3school.com.cn/tiy/t.asp?f=css3_transform-style：通过实际操作，改变值分别为flat和preserve-3d，查看效果，
+得知用途：使用flat看到的就是2d效果，再怎么翻转角度大（而且不论两个元素的角度是不是一样）都还是一个元素平面叠在另一个元素平面上；使用preserve-3d如果两个元素
+翻转角度不一样，就能看到两个元素的平面“交叉”效果，更加符合现实认知
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#div1
+{
+position: relative;
+height: 200px;
+width: 200px;
+margin: 100px;
+padding:10px;
+border: 1px solid black;
+}
+#div2
+{
+padding:50px;
+position: absolute;
+border: 1px solid black;
+background-color: red;
+transform: rotateY(60deg);
+transform-style: preserve-3d;
+-webkit-transform: rotateY(60deg); /* Safari and Chrome */
+-webkit-transform-style: preserve-3d; /* Safari and Chrome */
+}
+#div3
+{
+padding:40px;
+position: absolute;
+border: 1px solid black;
+background-color: yellow;
+transform: rotateY(20deg);
+-webkit-transform: rotateY(20deg); /* Safari and Chrome */
+
+}
+</style>
+</head>
+<body>
+<div id="div1">
+  <div id="div2">HELLO
+  	<div id="div3">YELLOW</div>
+  </div>
+</div>
+</body>
+</html>
+
+flat	子元素将不保留其 3D 位置。
+preserve-3d	子元素将保留其 3D 位置。
+
+如果不使用该元素，中心图片翻转还是显示图片的背面，无法看到背面的图片描述内容
+
+42.transform: scale(.5);
+将元素缩小至原来的50%大小
+
+43.使用icon font替代图片的优点：
+1.体积小
+2.icon font是矢量图形，拉升不变形
+3.颜色可自行更换
+4.支持css3属性对文字效果的修饰
+矢量图标库（icon font）:www.iconfont.cn
+
+44.content: "\e600";
+通过unicode码值对字符进行引用
+再通过自己声明的字体进行修饰，达到想要的显示效果：font-family: "icons-turn-arrow";
+这个字体是通过下面的命令声明的：
+@font-face {
+    font-family: "icons-turn-arrow";
+    src: url("../fonts/icons/turn-arrow.eot") format("embedded-opentype"), url("../fonts/icons/turn-arrow.woff") format("woff"), url("../fonts/icons/turn-arrow.ttf") format("truetype"), url("../fonts/icons/turn-arrow.svg") format("svg");
+}
+
+45.通过设置line-height: 30px;（与按钮的高度相同），来让箭头图标字体在按钮内部垂直居中
+
+46.按钮添加after伪元素（两个冒号，伪类一个冒号，例如:hover）之后，按钮按照top垂直对齐，通过设置vertical-align: middle;让所有的按钮中部对齐
+
+47.对字体进行抗锯齿渲染可以使字体看起来会更清晰舒服
+我们可以用以下两种定义进行抗锯齿渲染
+-webkit-font-smoothing:antialiased;/*chrome、safari*/
+-moz-osx-font-smoothing:grayscale;/*firefox*/
+当背景是深色，字体图标是浅色时，需要将字体平滑处理，让字体显示更好看，而不会有字体变粗的效果
+如果背景是浅色，字体图标是深色时，不需要平滑处理
+
+48..eslintrc文件中对rules进行配置，添加：
+"no-debugger": false
+表明允许在js中使用debugger进行调试
+直接在需要进行调试的地方书写debugger;即可
+
+49.firefox 15
+firefox 15之后的版本（16及其之后），样式不需要再写前缀了，因为已经把css标准化了
+
+50.浏览器厂商前缀在js中的写法：
+'MozTransform', 'msTransform', 'WebkitTransform', 'transform'
+分别对应css中的写法：
+-moz-,-ms-,-webkit-,没有前缀
+
+51.翻转的子元素是在父元素的后面的
+
+52.react优化
+ 给每个react component添加key={index}，意思是添加一个标记，这样便于react消耗更小的工作量、更短的时间来维护，协调components数组（这里指的是imgFigures和controllerUnits数组），
+可以理解为帮助react快速定位每个component，然后比较之前和现在elements的tree的变化进行渲染
+
+53.生成发布版本并查看是否允许正常（如果只想打包发布版本代码，只需执行：grunt build）：
+grunt serve:dist
+
+54.把项目放在github上进行访问：
+在.gitignore文件中删除dist目录，
+然后通过以下命令提交dist目录:git add dist
+然后：
+git commit -m"add dist"
+git subtree push --prefix=dist origin gh-pages(--prefix用来指定推送本地的dist目录；git subtree push推送到远端的gh-pages分支)
+
+然后在浏览器中访问路径进行查看：newlife201702.github.io/gallery-by--react/
+
+存在图片加载失败的问题：是因为当时在本地开发时，路片的路径是下面这样的：/assets/xxx.jpg
+因为本地开发使用这个绝对路径是能获取到图片的，因为项目根路径就是对应服务器的根路径
+发布时需要将绝对路径改成相对路径，才能正确获取图片：
+将
+publicPath: '/assets/',
+改为
+publicPath: 'assets/',（publicPath和filename决定了最后项目中图片的访问路径）
+
+再进行打包
+grunt build
+
+推送代码至github：
+git add dist
+git commit -m"change img path from absolute to relative"
+git subtree push --prefix=dist origin gh-pages
+
+这时候应该就能正常访问了
