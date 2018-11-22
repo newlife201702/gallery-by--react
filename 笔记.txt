@@ -449,3 +449,39 @@ git commit -m"change img path from absolute to relative"
 git subtree push --prefix=dist origin gh-pages
 
 这时候应该就能正常访问了
+
+55.使用git commit 命令中返回 Your branch is up-to-date with 'origin/master' 问题:
+https://www.jianshu.com/p/1657e92f5289
+(执行git add相关命令:git add readme.txt learn_git.txt或者git add .<全部添加>)
+
+github中your branch is up to date with "origin/master"是什么意思？:
+https://segmentfault.com/q/1010000012721076/a-1020000012721362
+原因可能是：
+(您没有更改任何内容或者更改了被忽略的文件或者更改了未add，一般是未add导致了这个问题：
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+        modified:   .gitignore
+        modified:   webpack.dist.config.js
+
+no changes added to commit)
+
+【原创】我的 Git 使用初体验：https://my.oschina.net/moooofly/blog/228608（推荐看这个答案）
+（从“接着测试修改文件内容的情况...”开始看到文末；
+
+我遇到的问题，报错如下：
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+        modified:   .gitignore
+        modified:   webpack.dist.config.js
+
+no changes added to commit
+On branch master
+Your branch is up to date with 'origin/master'.：您origin/master分支是最新的
+Changes not staged for commit：表明执行commit操作前没有执行add操作供commit
+modified:   .gitignore
+        modified:   webpack.dist.config.js：表明这两个文件被修改了
+no changes added to commit：没有修改被添加去进行commit）
